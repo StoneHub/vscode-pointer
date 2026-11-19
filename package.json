@@ -2,7 +2,7 @@
   "name": "pointer",
   "displayName": "Pointer",
   "description": "A whiteboard layer over your code: highlight, circle, box, arrow, cross out and annotate lines without editing the file. Scriptable, so an AI assistant can point at code.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "stonehub",
   "license": "MIT",
   "repository": {

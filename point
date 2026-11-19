@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // point FILE LINES ["note1|note2"]   highlight lines, e.g. point app/x.rb 84,120-125 "first|second"
 // point board SPEC.json | -          apply a whiteboard spec (see README), "-" reads stdin
+// point diff FILE [REF] [LINES] ["notes"]  side-by-side diff against a git ref (default HEAD), marks on the new side
 // point --clear                      remove every mark
 const fs = require('fs');
 const os = require('os');
@@ -16,11 +17,13 @@ const send = (board) => {
   fs.renameSync(tmp, path.join(dir, 'board.json'));
 };
 
-const [a, b, c] = process.argv.slice(2);
+const [a, b, c, d, e] = process.argv.slice(2);
 if (!a || a === '-h' || a === '--help') {
-  console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 4).map((l) => l.slice(3)).join('\n'));
+  console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 5).map((l) => l.slice(3)).join('\n'));
 } else if (a === '--clear') {
   send({ clear: 'all' });
+} else if (a === 'diff') {
+  send({ file: b, diff: c || 'HEAD', reveal: d ? String(d).split(',')[0] : undefined, ops: d ? [{ op: 'highlight', lines: d, note: e }] : [] });
 } else if (a === 'board') {
   send(JSON.parse(fs.readFileSync(b === '-' || !b ? 0 : b, 'utf8')));
 } else {

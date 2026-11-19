@@ -27,6 +27,7 @@ Select some code, then right-click and choose **Pointer**, or run these from the
 point src/server.js 84,120-125 "first save|second save"   # quick highlight with notes
 point board review.json                                    # full board
 cat review.json | point board -                            # same, from stdin
+point diff src/server.js origin/main 120 "the fix"         # side-by-side diff against a git ref, marks on top
 point --clear
 ```
 
@@ -52,7 +53,9 @@ A board is one file plus a list of marks. Line numbers are 1-based, the same as 
 }
 ```
 
-Board fields: `file`, `ops`, `add` (keep the marks already on the file), `fold` / `unfold` (lines whose regions to collapse or expand), `unfoldAll`, `reveal` (scroll there), `clear: "all"`.
+Add `"diff": "origin/main"` (any git ref) to a board and the file opens as a diff: that ref on the left, the working file on the right. `ops` draw on the right side and `beforeOps` on the left. VS Code shows the diff inline instead when the editor is narrow.
+
+Board fields: `file`, `ops`, `diff`, `beforeOps`, `add` (keep the marks already on the file), `fold` / `unfold` (lines whose regions to collapse or expand), `unfoldAll`, `reveal` (scroll there), `clear: "all"`.
 
 Mark fields: `lines` or `line` picks the lines. `text` narrows a mark to the first match on the line, `cols` to a column range. `color` is `red`, `amber`, `green`, `blue`, `purple`, `white` or any hex colour. A multi-line `note` becomes a floating sticky. `svg` draws raw SVG at a line for diagrams; `{w}`, `{h}`, `{lh}` (line height) and `{cw}` (character width) are filled in for you. Arrows run down the indent gutter by default; `"side": "right"` routes them past the end of the lines.
 

@@ -6,6 +6,7 @@
 // Nothing here edits a document. Everything is a decoration.
 const vscode = require('vscode');
 const fs = require('fs');
+const cp = require('child_process');
 const os = require('os');
 const path = require('path');
 
@@ -21,7 +22,8 @@ const rgba = (hex, a) => {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 };
 
-const boards = new Map(); // fsPath -> ops[]
+const boards = new Map(); // document key -> ops[]
+const keyOf = (uri) => (uri.scheme === 'file' ? uri.fsPath : uri.toString());
 const types = new Map(); // css key -> TextEditorDecorationType
 let overlayType;
 
@@ -267,7 +269,7 @@ const draw = {
 };
 
 function paint(editor) {
-  const ops = boards.get(editor.document.uri.fsPath) || [];
+  const ops = boards.get(keyOf(editor.document.uri)) || [];
   const byType = new Map();
   const out = { add(t, d) { if (!byType.has(t)) byType.set(t, []); byType.get(t).push(d); } };
   for (const op of ops) {
@@ -280,30 +282,57 @@ const repaintAll = () => vscode.window.visibleTextEditors.forEach(paint);
 const clearAll = () => { boards.clear(); repaintAll(); };
 
 function addOps(editor, ops) {
-  const key = editor.document.uri.fsPath;
+  const key = keyOf(editor.document.uri);
   boards.set(key, (boards.get(key) || []).concat(ops));
   paint(editor);
 }
 
 // ---------- applying a board ----------
 
+// The "before" side of a diff: the file as it is at a git ref.
+const GIT_SCHEME = 'pointer-git';
+const gitUri = (file, ref) => vscode.Uri.from({ scheme: GIT_SCHEME, path: file, query: JSON.stringify({ file, ref }) });
+const gitContent = {
+  provideTextDocumentContent(uri) {
+    const { file, ref } = JSON.parse(uri.query);
+    return new Promise((resolve) => {
+      cp.execFile('git', ['-C', path.dirname(file), 'show', `${ref}:./${path.basename(file)}`], { maxBuffer: 64 * 1024 * 1024 },
+        (err, out) => resolve(err ? `Pointer could not read ${path.basename(file)} at ${ref}:\n${err.message}` : out));
+    });
+  },
+};
+
+function setOps(key, ops, add) {
+  const all = (add ? boards.get(key) || [] : []).concat((ops || []).filter((o) => draw[o.op]));
+  if (all.length) boards.set(key, all);
+  else boards.delete(key);
+}
+
 async function applyBoard(board) {
   if (board.clear === 'all') clearAll();
   if (!board.file) return;
   const uri = vscode.Uri.file(board.file);
-  const doc = await vscode.workspace.openTextDocument(uri);
-  const editor = await vscode.window.showTextDocument(doc, { preview: false, preserveFocus: true });
-  const ops = (board.ops || []).filter((o) => draw[o.op]);
-  const kept = board.add ? (boards.get(uri.fsPath) || []) : [];
-  if (kept.length + ops.length) boards.set(uri.fsPath, kept.concat(ops));
-  else boards.delete(uri.fsPath);
-
-  const lines = (spec) => parseRanges(spec).map(([a]) => a);
-  if (board.unfoldAll) await vscode.commands.executeCommand('editor.unfoldAll');
-  if (board.fold) await vscode.commands.executeCommand('editor.fold', { levels: 1, selectionLines: lines(board.fold) });
-  if (board.unfold) await vscode.commands.executeCommand('editor.unfold', { levels: 1, selectionLines: lines(board.unfold) });
-  paint(editor);
-  if (board.reveal) {
+  setOps(keyOf(uri), board.ops, board.add);
+  let editor;
+  if (board.diff) {
+    // Side by side: the file at a git ref on the left, the working file on the right.
+    // "ops" draw on the right, "beforeOps" on the left.
+    const ref = typeof board.diff === 'string' ? board.diff : board.diff.base || 'HEAD';
+    const left = gitUri(uri.fsPath, ref);
+    setOps(keyOf(left), board.beforeOps, board.add);
+    await vscode.commands.executeCommand('vscode.diff', left, uri, `${path.basename(uri.fsPath)} (${ref} ↔ now)`, { preview: false, preserveFocus: true });
+    editor = vscode.window.visibleTextEditors.find((e) => keyOf(e.document.uri) === keyOf(uri));
+    repaintAll();
+  } else {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    editor = await vscode.window.showTextDocument(doc, { preview: false, preserveFocus: true });
+    const lines = (spec) => parseRanges(spec).map(([a]) => a);
+    if (board.unfoldAll) await vscode.commands.executeCommand('editor.unfoldAll');
+    if (board.fold) await vscode.commands.executeCommand('editor.fold', { levels: 1, selectionLines: lines(board.fold) });
+    if (board.unfold) await vscode.commands.executeCommand('editor.unfold', { levels: 1, selectionLines: lines(board.unfold) });
+    paint(editor);
+  }
+  if (board.reveal && editor) {
     const [[a, b]] = parseRanges(board.reveal);
     editor.revealRange(new vscode.Range(a, 0, b, 0), vscode.TextEditorRevealType.InCenterIfOutsideViewport);
   }
@@ -354,6 +383,7 @@ function activate(context) {
   const cmd = (name, fn) => vscode.commands.registerTextEditorCommand(`pointer.${name}`, fn);
   context.subscriptions.push(
     { dispose: () => watcher.close() },
+    vscode.workspace.registerTextDocumentContentProvider(GIT_SCHEME, gitContent),
     vscode.window.registerUriHandler({
       handleUri(uri) {
         const q = new URLSearchParams(uri.query);
@@ -366,8 +396,8 @@ function activate(context) {
       },
     }),
     vscode.commands.registerCommand('pointer.clear', clearAll),
-    cmd('clearFile', (ed) => { boards.delete(ed.document.uri.fsPath); paint(ed); }),
-    cmd('undo', (ed) => { const ops = boards.get(ed.document.uri.fsPath); if (ops) { ops.pop(); paint(ed); } }),
+    cmd('clearFile', (ed) => { boards.delete(keyOf(ed.document.uri)); paint(ed); }),
+    cmd('undo', (ed) => { const ops = boards.get(keyOf(ed.document.uri)); if (ops) { ops.pop(); paint(ed); } }),
     cmd('highlight', (ed) => fromSelections(ed, (s) => ({ op: 'highlight', lines: s.lines }))),
     cmd('circle', (ed) => fromSelections(ed, (s) => ({ op: 'circle', lines: s.lines, cols: s.cols }))),
     cmd('box', (ed) => fromSelections(ed, (s) => ({ op: 'box', lines: s.lines }))),
@@ -375,7 +405,7 @@ function activate(context) {
     cmd('underline', (ed) => fromSelections(ed, (s) => ({ op: 'underline', lines: s.lines, cols: s.cols }))),
     cmd('focus', (ed) => {
       const except = ed.selections.map((s) => `${s.start.line + 1}-${s.end.line + 1}`).join(',');
-      const key = ed.document.uri.fsPath;
+      const key = keyOf(ed.document.uri);
       boards.set(key, (boards.get(key) || []).filter((o) => o.op !== 'dim'));
       addOps(ed, [{ op: 'dim', except }]);
     }),
