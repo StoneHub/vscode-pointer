@@ -1,15 +1,139 @@
 {
   "name": "pointer",
   "displayName": "Pointer",
-  "description": "Highlight and fold line ranges from a vscode:// link, so Claude can point at code.",
-  "version": "0.1.0",
+  "description": "A whiteboard layer over your code: highlight, circle, box, arrow, cross out and annotate lines without editing the file. Scriptable, so an AI assistant can point at code.",
+  "version": "0.2.0",
   "publisher": "stonehub",
   "license": "MIT",
-  "repository": { "type": "git", "url": "local" },
-  "engines": { "vscode": "^1.80.0" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/StoneHub/vscode-pointer"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
   "main": "./extension.js",
-  "activationEvents": ["onUri", "onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished",
+    "onUri"
+  ],
   "contributes": {
-    "commands": [{ "command": "pointer.clear", "title": "Pointer: Clear highlights" }]
-  }
+    "commands": [
+      {
+        "command": "pointer.clear",
+        "title": "Clear all marks",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.clearFile",
+        "title": "Clear marks in this file",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.undo",
+        "title": "Undo last mark",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.highlight",
+        "title": "Highlight selection",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.circle",
+        "title": "Circle selection",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.box",
+        "title": "Box selection",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.strike",
+        "title": "Cross out selection",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.underline",
+        "title": "Underline selection",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.focus",
+        "title": "Dim everything except selection",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.note",
+        "title": "Add note at selection",
+        "category": "Pointer"
+      },
+      {
+        "command": "pointer.arrow",
+        "title": "Arrow between two cursors",
+        "category": "Pointer"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "pointer.menu",
+        "label": "Pointer"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "pointer.menu",
+          "group": "9_pointer"
+        }
+      ],
+      "pointer.menu": [
+        {
+          "command": "pointer.clear"
+        },
+        {
+          "command": "pointer.clearFile"
+        },
+        {
+          "command": "pointer.undo"
+        },
+        {
+          "command": "pointer.highlight"
+        },
+        {
+          "command": "pointer.circle"
+        },
+        {
+          "command": "pointer.box"
+        },
+        {
+          "command": "pointer.strike"
+        },
+        {
+          "command": "pointer.underline"
+        },
+        {
+          "command": "pointer.focus"
+        },
+        {
+          "command": "pointer.note"
+        },
+        {
+          "command": "pointer.arrow"
+        }
+      ]
+    }
+  },
+  "categories": [
+    "Other",
+    "Education"
+  ],
+  "keywords": [
+    "annotate",
+    "highlight",
+    "whiteboard",
+    "code review",
+    "ai"
+  ]
 }
