@@ -1,0 +1,15 @@
+{
+  "name": "pointer",
+  "displayName": "Pointer",
+  "description": "Highlight and fold line ranges from a vscode:// link, so Claude can point at code.",
+  "version": "0.1.0",
+  "publisher": "stonehub",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "local" },
+  "engines": { "vscode": "^1.80.0" },
+  "main": "./extension.js",
+  "activationEvents": ["onUri", "onStartupFinished"],
+  "contributes": {
+    "commands": [{ "command": "pointer.clear", "title": "Pointer: Clear highlights" }]
+  }
+}

@@ -1,0 +1,11 @@
+#!/bin/zsh
+# point FILE LINES [note1|note2]     e.g. point app/x.rb 84,120-125 "first save|second save"
+# point --clear
+# Extra query params via env: POINTER_EXTRA="fold=1-40&foldOthers=1&add=1"
+if [[ "$1" == "--clear" ]]; then open -g "vscode://stonehub.pointer/clear"; exit; fi
+file="${1:A}"; lines="$2"; notes="$3"
+enc() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"; }
+url="vscode://stonehub.pointer/show?file=$(enc "$file")&lines=$(enc "$lines")"
+[[ -n "$notes" ]] && url+="&notes=$(enc "$notes")"
+[[ -n "$POINTER_EXTRA" ]] && url+="&$POINTER_EXTRA"
+open "$url"
