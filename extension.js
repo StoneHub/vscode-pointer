@@ -57,7 +57,6 @@ async function show(params) {
   }
 
   if (entries.length) {
-    editor.selection = new vscode.Selection(entries[0].range.start, entries[0].range.start);
     editor.revealRange(entries[0].range, vscode.TextEditorRevealType.InCenter);
   }
 }
