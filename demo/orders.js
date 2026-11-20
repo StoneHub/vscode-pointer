@@ -11,8 +11,8 @@ async function placeOrder(cart, customer, db) {
     order.discount = applyCoupon(order.total, customer.coupon);
   }
 
-  await sendReceipt(customer.email, order);
   await db.orders.save(order);
+  await sendReceipt(customer.email, order); // receipt needs the saved order id
   return order;
 }
 
