@@ -1,0 +1,17 @@
+{
+  "file": "demo/orders.js",
+  "diff": "HEAD~1",
+  "reveal": "1-25",
+  "ops": [
+    { "op": "box", "lines": "5-8", "label": "build the order" },
+    { "op": "circle", "line": 14, "text": "db.orders.save(order)" },
+    { "op": "note", "line": 14, "text": "save first", "color": "green" },
+    { "op": "arrow", "from": 15, "to": 14 },
+    { "op": "underline", "line": 21, "text": "coupon.percent / 100" },
+    { "op": "dim", "except": "2-17" }
+  ],
+  "beforeOps": [
+    { "op": "strike", "line": 14 },
+    { "op": "note", "line": 14, "text": "receipt went out with no order id", "color": "red" }
+  ]
+}
