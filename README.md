@@ -1,5 +1,7 @@
 # Pointer
 
+![A side-by-side diff with a box, a circle, an arrow, a cross-out and notes drawn over the code](images/diff-board.png)
+
 A whiteboard layer over your code in VS Code. Highlight lines, circle a call, box a block, draw an arrow between two lines, cross something out, dim everything else, or pin a note next to the code. Nothing is written to the file: every mark is an editor decoration, and one command clears them all.
 
 Pointer is scriptable. A small CLI drops a JSON "board" into `~/.pointer/board.json`, and the extension draws it in the window whose workspace holds that file. That makes it a good way for an AI coding assistant (or a teammate's script) to point at code during a review instead of listing line numbers. It does not take focus or touch the mouse or keyboard.

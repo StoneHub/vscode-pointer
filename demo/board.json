@@ -1,9 +1,9 @@
 {
   "file": "demo/orders.js",
-  "diff": "HEAD~1",
+  "diff": "9140326",
   "reveal": "1-25",
   "ops": [
-    { "op": "box", "lines": "5-8", "label": "build the order" },
+    { "op": "box", "lines": "5-8", "label": "build" },
     { "op": "circle", "line": 14, "text": "db.orders.save(order)" },
     { "op": "note", "line": 14, "text": "save first", "color": "green" },
     { "op": "arrow", "from": 15, "to": 14 },
